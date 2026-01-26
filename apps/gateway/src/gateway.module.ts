@@ -3,10 +3,13 @@ import { GatewayController } from './gateway.controller';
 import { GatewayService } from './gateway.service';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    PassportModule,
     ClientsModule.register([
       {
         name: 'CATALOG_CLIENT',
@@ -32,9 +35,17 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           queue: process.env.SEARCH_QUEUE,
         },
       },
+      {
+        name: 'AUTH_CLIENT',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBITMQ_URL!],
+          queue: process.env.AUTH_QUEUE,
+        },
+      },
     ]),
   ],
   controllers: [GatewayController],
-  providers: [GatewayService],
+  providers: [GatewayService, JwtStrategy],
 })
 export class GatewayModule {}

@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Product } from '@prisma/catalog-client';
 
 @Controller()
 export class CatalogController {
@@ -9,5 +10,17 @@ export class CatalogController {
   @MessagePattern('service.ping')
   ping() {
     return this.catalogService.ping();
+  }
+
+  @MessagePattern('product.create')
+  createProduct(
+    @Payload() data: { name: string; price: number },
+  ): Promise<Product> {
+    return this.catalogService.createProduct(data);
+  }
+
+  @MessagePattern('product.list')
+  getProducts(): Promise<Product[]> {
+    return this.catalogService.getProducts();
   }
 }
