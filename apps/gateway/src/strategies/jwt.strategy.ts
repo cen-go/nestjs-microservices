@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { RequestUser } from '../types';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -24,13 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       const user = await firstValueFrom(
         this.authClient.send('users.findOneUser', payload.sub),
       );
-      return user as {
-        id: string;
-        email: string;
-        userName: string;
-        role: 'USER' | 'ADMIN';
-        lastSeen: Date;
-      };
+      return user as RequestUser;
     } catch {
       throw new UnauthorizedException('Invalid token');
     }

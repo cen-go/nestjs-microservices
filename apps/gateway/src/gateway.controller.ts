@@ -11,6 +11,9 @@ import { GatewayService } from './gateway.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError, throwError } from 'rxjs';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Roles } from './decorators/roles.decorator';
+import { Role } from './enums/role.enum';
+import { RolesGuard } from './guards/roles.guard';
 
 @Controller()
 export class GatewayController {
@@ -49,7 +52,8 @@ export class GatewayController {
   }
 
   @Get('products')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   getProducts() {
     return 'Dummy response from gateway';
     // return this.catalogClient.send('product.list', {});
