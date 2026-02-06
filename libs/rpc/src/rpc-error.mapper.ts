@@ -1,4 +1,3 @@
-import { RpcException } from '@nestjs/microservices';
 import { RpcErrorPayload } from './rpc.types';
 import {
   BadRequestException,
@@ -9,15 +8,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-export function mapRpcErrorToHttp(err: RpcException) {
-  const payload = err.getError() as RpcErrorPayload;
-
-  const { code, message } = payload;
+export function mapRpcErrorToHttp(err: RpcErrorPayload) {
+  const { code, message } = err;
+  const details = err.details ?? [];
 
   switch (code) {
     case 'BAD_REQUEST':
     case 'VALIDATION_ERROR':
-      throw new BadRequestException(message);
+      console.log('mapper triggered');
+      throw new BadRequestException(`${message}: ${details.join(', ')}`);
     case 'NOT_FOUND':
       throw new NotFoundException(message);
     case 'UNAUTHORIZED':

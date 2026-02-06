@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { ProductsHttpController } from './products/products.controller';
 
 @Module({
   imports: [
@@ -45,7 +46,7 @@ import { PassportModule } from '@nestjs/passport';
       },
     ]),
   ],
-  controllers: [GatewayController],
+  controllers: [GatewayController, ProductsHttpController],
   providers: [GatewayService, JwtStrategy],
 })
 export class GatewayModule {}

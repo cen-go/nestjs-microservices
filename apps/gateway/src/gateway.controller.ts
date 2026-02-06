@@ -4,16 +4,11 @@ import {
   Get,
   Inject,
   Post,
-  UseGuards,
   HttpException,
 } from '@nestjs/common';
 import { GatewayService } from './gateway.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, catchError, throwError } from 'rxjs';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Roles } from './decorators/roles.decorator';
-import { Role } from './enums/role.enum';
-import { RolesGuard } from './guards/roles.guard';
 
 @Controller()
 export class GatewayController {
@@ -43,21 +38,6 @@ export class GatewayController {
       ping(this.mediaClient),
       ping(this.searchClient),
     ]);
-  }
-
-  @Post('products')
-  @UseGuards(JwtAuthGuard)
-  createProduct(@Body() data: { name: string; price: number }) {
-    return this.catalogClient.send('product.create', data);
-  }
-
-  @Get('products')
-  @Roles(Role.ADMIN)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  getProducts() {
-    return 'Dummy response from gateway';
-    // return this.catalogClient.send('product.list', {});
-    return this.catalogClient.send('product.list', {});
   }
 
   @Post('auth/register')

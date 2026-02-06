@@ -10,5 +10,6 @@ export type RpcErrorCode =
 export interface RpcErrorPayload {
   code: RpcErrorCode;
   message: string;
+  details?: string[];
   statusCode: number;
 }

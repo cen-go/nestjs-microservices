@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { Product } from '@prisma/catalog-client';
+import { Product } from '@prisma/catalog-db-client';
+import { CreateProductDto } from '@app/contracts/catalog/create-product.dto';
+import { rpcNotFound } from '@app/rpc';
 
 @Injectable()
 export class CatalogService {
@@ -14,11 +16,22 @@ export class CatalogService {
     };
   }
 
-  async createProduct(data: { name: string; price: number }): Promise<Product> {
-    return this.prisma.product.create({ data });
+  async createProduct(data: CreateProductDto): Promise<Product> {
+    return await this.prisma.product.create({ data });
   }
 
   async getProducts(): Promise<Product[]> {
-    return this.prisma.product.findMany();
+    return await this.prisma.product.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getProductById(id: string): Promise<Product> {
+    const product = await this.prisma.product.findUnique({ where: { id } });
+
+    if (!product) {
+      rpcNotFound('Product not found');
+    }
+    return product!;
   }
 }
