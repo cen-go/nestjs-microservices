@@ -10,4 +10,6 @@ export class MediaController {
   ping() {
     return this.mediaService.ping();
   }
+
+  @MessagePattern('media.uploadProductImage')
 }

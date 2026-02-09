@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { MediaModule } from './media.module';
 import { Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { applyToMicroserviceLayer } from '@app/rpc';
 
 async function bootstrap() {
   process.title = 'media';
@@ -14,6 +15,8 @@ async function bootstrap() {
     MediaModule,
     { transport: Transport.RMQ, options: { urls: [rmqUrl], queue } },
   );
+
+  applyToMicroserviceLayer(app);
 
   app.enableShutdownHooks();
 

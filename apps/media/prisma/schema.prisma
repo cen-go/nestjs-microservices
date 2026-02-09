@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+  // Generate the client into a unique folder to avoid conflicts
+  output   = "../../../node_modules/@prisma/media-db-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("MEDIA_DATABASE_URL")
+}
+
+model Media {
+  id String @id @default(cuid())
+  url String
+  publicId String @unique
+  uploaderId String
+  productId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
