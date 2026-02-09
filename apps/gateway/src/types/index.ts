@@ -7,3 +7,15 @@ export interface RequestUser {
   role: Role;
   lastSeen: Date;
 }
+
+export interface CreatedProduct {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  name: string;
+  description: string;
+  price: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
+  imageUrl: string | null;
+  userId: string;
+}

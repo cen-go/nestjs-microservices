@@ -14,7 +14,7 @@ model Media {
   url String
   publicId String @unique
   uploaderId String
-  productId String
+  productId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

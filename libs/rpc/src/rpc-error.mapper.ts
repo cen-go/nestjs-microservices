@@ -11,6 +11,7 @@ import {
 export function mapRpcErrorToHttp(err: RpcErrorPayload) {
   const { code, message } = err;
   const details = err.details ?? [];
+  console.log('MAPPER EXECUTED', err);
 
   switch (code) {
     case 'BAD_REQUEST':

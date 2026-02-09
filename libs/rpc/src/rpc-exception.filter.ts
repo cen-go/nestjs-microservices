@@ -6,6 +6,7 @@ import { RpcErrorPayload } from './rpc.types';
 @Catch()
 export class RpcAllExceptionFilter extends BaseRpcExceptionFilter {
   catch(exception: any, host: ArgumentsHost): Observable<any> {
+    console.log('EXCEPTION FILTER:', exception);
     if (exception instanceof RpcException) {
       return super.catch(exception, host);
     }
