@@ -23,7 +23,9 @@
     "prisma:media:migrate:dev": "npx prisma migrate dev --schema=./apps/media/prisma/schema.prisma",
     "prisma:media:generate": "npx prisma generate --schema=./apps/media/prisma/schema.prisma",
     "prisma:auth:migrate:dev": "npx prisma migrate dev --schema=./apps/auth/prisma/schema.prisma",
-    "prisma:auth:generate": "npx prisma generate --schema=./apps/auth/prisma/schema.prisma"
+    "prisma:auth:generate": "npx prisma generate --schema=./apps/auth/prisma/schema.prisma",
+    "prisma:search:migrate:dev": "npx prisma migrate dev --schema=./apps/search/prisma/schema.prisma",
+    "prisma:search:generate": "npx prisma generate --schema=./apps/search/prisma/schema.prisma"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

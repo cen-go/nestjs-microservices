@@ -3,10 +3,14 @@ import { PrismaService } from './prisma.service';
 import { Product } from '@prisma/catalog-db-client';
 import { CreateProductDto } from '@app/contracts/catalog/create-product.dto';
 import { rpcNotFound } from '@app/rpc';
+import { ProductEventsPublisher } from './events/product-events.publisher';
 
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: ProductEventsPublisher,
+  ) {}
 
   ping() {
     return {
@@ -17,7 +21,18 @@ export class CatalogService {
   }
 
   async createProduct(data: CreateProductDto): Promise<Product> {
-    return await this.prisma.product.create({ data });
+    const product = await this.prisma.product.create({ data });
+
+    // Emit product created event
+    this.events.productCreated({
+      ProductId: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      status: product.status,
+    });
+
+    return product;
   }
 
   async getProducts(): Promise<Product[]> {

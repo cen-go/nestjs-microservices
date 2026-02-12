@@ -6,6 +6,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { ProductsHttpController } from './products/products.controller';
+import { SearchController } from 'apps/search/src/search.controller';
 
 @Module({
   imports: [
@@ -46,7 +47,7 @@ import { ProductsHttpController } from './products/products.controller';
       },
     ]),
   ],
-  controllers: [GatewayController, ProductsHttpController],
+  controllers: [GatewayController, ProductsHttpController, SearchController],
   providers: [GatewayService, JwtStrategy],
 })
 export class GatewayModule {}

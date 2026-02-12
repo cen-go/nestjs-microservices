@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+  // Generate the client into a unique folder to avoid conflicts
+  output   = "../../../node_modules/@prisma/search-db-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SEARCH_DATABASE_URL")
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  productId      String        @unique
+  name           String
+  normalizedText String
+  price          Int
+  status         ProductStatus
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

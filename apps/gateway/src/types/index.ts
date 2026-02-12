@@ -16,6 +16,6 @@ export interface CreatedProduct {
   description: string;
   price: number;
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
-  imageUrl: string | null;
+  imageUrl?: string | null;
   userId: string;
 }
