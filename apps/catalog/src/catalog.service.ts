@@ -25,7 +25,7 @@ export class CatalogService {
 
     // Emit product created event
     this.events.productCreated({
-      ProductId: product.id,
+      productId: product.id,
       name: product.name,
       description: product.description,
       price: product.price,

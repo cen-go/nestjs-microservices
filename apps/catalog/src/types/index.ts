@@ -1,5 +1,5 @@
 export type ProductCreatedEvent = {
-  ProductId: string;
+  productId: string;
   name: string;
   description: string;
   price: number;

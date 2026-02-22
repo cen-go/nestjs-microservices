@@ -1,6 +1,5 @@
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProductStatus } from '@prisma/catalog-db-client';
 
 export class CreateProductDto {
   @IsString()
@@ -16,7 +15,7 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsString()
-  status?: ProductStatus;
+  status?: 'ACTIVE' | 'INACTIVE' | 'DRAFT';
 
   @IsOptional()
   @IsString()

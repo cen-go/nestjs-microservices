@@ -1,0 +1,191 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: nestjs-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    networks:
+      - nestjs-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: nestjs-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"  # AMQP protocol port
+      - "15672:15672"  # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - nestjs-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Gateway Service
+  gateway:
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: production
+    container_name: nestjs-gateway
+    environment:
+      NODE_ENV: production
+      GATEWAY_PORT: 3000
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      AUTH_QUEUE: ${AUTH_QUEUE}
+      CATALOG_QUEUE: ${CATALOG_QUEUE}
+      MEDIA_QUEUE: ${MEDIA_QUEUE}
+      SEARCH_QUEUE: ${SEARCH_QUEUE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    ports:
+      - "3000:3000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network
+    restart: unless-stopped
+
+  # Auth Service
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: production
+    container_name: nestjs-auth
+    environment:
+      NODE_ENV: production
+      AUTH_PORT: 3001
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      AUTH_QUEUE: ${AUTH_QUEUE}
+      AUTH_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/auth_db
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+      npx prisma migrate deploy --schema=./apps/auth/prisma/schema.prisma &&
+      node dist/apps/auth/main
+      "
+
+  # Catalog Service
+  catalog:
+    build:
+      context: .
+      dockerfile: ./apps/catalog/Dockerfile
+      target: production
+    container_name: nestjs-catalog
+    environment:
+      NODE_ENV: production
+      CATALOG_PORT: 3002
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      CATALOG_QUEUE: ${CATALOG_QUEUE}
+      CATALOG_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/catalog_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+      npx prisma migrate deploy --schema=./apps/catalog/prisma/schema.prisma &&
+      node dist/apps/catalog/main
+      "
+
+  # Media Service
+  media:
+    build:
+      context: .
+      dockerfile: ./apps/media/Dockerfile
+      target: production
+    container_name: nestjs-media
+    environment:
+      NODE_ENV: production
+      MEDIA_PORT: 3003
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      MEDIA_QUEUE: ${MEDIA_QUEUE}
+      MEDIA_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/media_db
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+      npx prisma migrate deploy --schema=./apps/media/prisma/schema.prisma &&
+      node dist/apps/media/main
+      "
+
+  # Search Service
+  search:
+    build:
+      context: .
+      dockerfile: ./apps/search/Dockerfile
+      target: production
+    container_name: nestjs-search
+    environment:
+      NODE_ENV: production
+      SEARCH_PORT: 3004
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      SEARCH_QUEUE: ${SEARCH_QUEUE}
+      SEARCH_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/search_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+      npx prisma migrate deploy --schema=./apps/search/prisma/schema.prisma &&
+      node dist/apps/search/main
+      "
+
+networks:
+  nestjs-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

@@ -1,0 +1,207 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: nestjs-postgres-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    networks:
+      - nestjs-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: nestjs-rabbitmq-dev
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"  # AMQP protocol port
+      - "15672:15672"  # Management UI port
+    volumes:
+      - rabbitmq_data_dev:/var/lib/rabbitmq
+    networks:
+      - nestjs-network-dev
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Gateway Service (Development with hot reload)
+  gateway:
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: development
+    container_name: nestjs-gateway-dev
+    environment:
+      NODE_ENV: development
+      GATEWAY_PORT: 3000
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      AUTH_QUEUE: ${AUTH_QUEUE}
+      CATALOG_QUEUE: ${CATALOG_QUEUE}
+      MEDIA_QUEUE: ${MEDIA_QUEUE}
+      SEARCH_QUEUE: ${SEARCH_QUEUE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network-dev
+    command: npm run start:dev gateway
+    restart: unless-stopped
+
+  # Auth Service (Development with hot reload)
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: development
+    container_name: nestjs-auth-dev
+    environment:
+      NODE_ENV: development
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      AUTH_QUEUE: ${AUTH_QUEUE}
+      AUTH_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/auth_db
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network-dev
+    command: >
+      sh -c "
+      npx prisma generate --schema=./apps/auth/prisma/schema.prisma &&
+      npx prisma migrate dev --schema=./apps/auth/prisma/schema.prisma &&
+      npm run start:dev auth
+      "
+    restart: unless-stopped
+
+  # Catalog Service (Development with hot reload)
+  catalog:
+    build:
+      context: .
+      dockerfile: ./apps/catalog/Dockerfile
+      target: development
+    container_name: nestjs-catalog-dev
+    environment:
+      NODE_ENV: development
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      CATALOG_QUEUE: ${CATALOG_QUEUE}
+      CATALOG_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/catalog_db
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network-dev
+    command: >
+      sh -c "
+      npx prisma generate --schema=./apps/catalog/prisma/schema.prisma &&
+      npx prisma migrate dev --schema=./apps/catalog/prisma/schema.prisma &&
+      npm run start:dev catalog
+      "
+    restart: unless-stopped
+
+  # Media Service (Development with hot reload)
+  media:
+    build:
+      context: .
+      dockerfile: ./apps/media/Dockerfile
+      target: development
+    container_name: nestjs-media-dev
+    environment:
+      NODE_ENV: development
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      MEDIA_QUEUE: ${MEDIA_QUEUE}
+      MEDIA_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/media_db
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network-dev
+    command: >
+      sh -c "
+      npx prisma generate --schema=./apps/media/prisma/schema.prisma &&
+      npx prisma migrate dev --schema=./apps/media/prisma/schema.prisma &&
+      npm run start:dev media
+      "
+    restart: unless-stopped
+
+  # Search Service (Development with hot reload)
+  search:
+    build:
+      context: .
+      dockerfile: ./apps/search/Dockerfile
+      target: development
+    container_name: nestjs-search-dev
+    environment:
+      NODE_ENV: development
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      SEARCH_QUEUE: ${SEARCH_QUEUE}
+      SEARCH_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/search_db
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - nestjs-network-dev
+    command: >
+      sh -c "
+      npx prisma generate --schema=./apps/search/prisma/schema.prisma &&
+      npx prisma migrate dev --schema=./apps/search/prisma/schema.prisma &&
+      npm run start:dev search
+      "
+    restart: unless-stopped
+
+networks:
+  nestjs-network-dev:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+  rabbitmq_data_dev:
