@@ -58,10 +58,10 @@ docker-compose down
 | Service | Port | Description |
 |---------|------|-------------|
 | Gateway | 3000 | HTTP gateway that routes requests to microservices |
-| Auth | Authentication and authorization service |
-| Catalog | Product catalog management service |
-| Media | Media upload and management service (Cloudinary) |
-| Search | Search functionality service |
+| Auth    |      | Authentication and authorization service |
+| Catalog |      | Product catalog management service |
+| Media   |      | Media upload and management service (Cloudinary) |
+| Search  |      | Search functionality service |
 | PostgreSQL | 5432 | Database for all services |
 | RabbitMQ | 5672/15672 | Message broker (AMQP port / Management UI) |
 

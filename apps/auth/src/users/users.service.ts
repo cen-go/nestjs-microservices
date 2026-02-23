@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { CreateUserDto } from './dto/create-user.dto';
-// import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma.service';
 import bcrypt from 'bcryptjs';
+import { Role } from '@prisma/auth-db-client';
 
 @Injectable()
 export class UsersService {
@@ -62,9 +63,28 @@ export class UsersService {
     return userResult;
   }
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+  async update(updateUserDto: UpdateUserDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: updateUserDto.id },
+    });
+
+    if (!user) {
+      throw new RpcException({
+        message: 'User not found',
+        statusCode: 401,
+      });
+    }
+
+    console.log(user);
+
+    return await this.prisma.user.update({
+      where: { id: updateUserDto.id },
+      data: {
+        userName: updateUserDto.userName ?? user.userName,
+        role: updateUserDto.role ?? Role.USER,
+      },
+    });
+  }
 
   remove(id: number) {
     return `This action removes a #${id} user`;

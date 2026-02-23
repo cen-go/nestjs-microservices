@@ -5,6 +5,8 @@ import {
   Inject,
   Post,
   HttpException,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { GatewayService } from './gateway.service';
 import { ClientProxy } from '@nestjs/microservices';
@@ -56,6 +58,20 @@ export class GatewayController {
   @Post('auth/login')
   login(@Body() data: { userName: string; password: string }) {
     return this.authClient.send('auth.login', data).pipe(
+      catchError((val: { message: string; statusCode: number }) => {
+        return throwError(
+          () => new HttpException(val.message, val.statusCode || 500),
+        );
+      }),
+    );
+  }
+
+  @Patch('auth/update/:id')
+  update(
+    @Param('id') id: string,
+    @Body() data: { userName?: string; role?: 'ADMIN' | 'USER' },
+  ) {
+    return this.authClient.send('users.updateUser', { ...data, id }).pipe(
       catchError((val: { message: string; statusCode: number }) => {
         return throwError(
           () => new HttpException(val.message, val.statusCode || 500),

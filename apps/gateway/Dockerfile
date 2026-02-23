@@ -44,6 +44,6 @@ RUN adduser -S nestjs -u 1001
 RUN chown -R nestjs:nodejs /usr/src/app
 USER nestjs
 
-EXPOSE 3000
+EXPOSE 5000
 
 CMD ["node", "dist/apps/gateway/main"]

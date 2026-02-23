@@ -18,5 +18,6 @@ async function bootstrap() {
   await app.listen();
 
   logger.log(`Auth service (RMQ) is listening queue:${queue} on ${rmqUrl}`);
+  logger.log('HOT RELOAD IS WORKING');
 }
 bootstrap();

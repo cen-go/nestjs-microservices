@@ -42,6 +42,9 @@ COPY --from=development /usr/src/app/dist ./dist
 # Copy generated Prisma client from development stage
 COPY --from=development /usr/src/app/node_modules/@prisma/search-db-client ./node_modules/@prisma/search-db-client
 
+# Copy Prisma schema for migrations
+COPY --from=development /usr/src/app/apps/search/prisma ./apps/search/prisma
+
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001

@@ -35,9 +35,6 @@ logs
 *.tmp
 *.temp
 
-# Prisma
-**/prisma/migrations
-
 # Docker
 Dockerfile*
 docker-compose*
